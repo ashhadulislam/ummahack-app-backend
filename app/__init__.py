@@ -41,7 +41,9 @@ def create_app(config_name):
                 # Go ahead and handle the request, the user is authenticated
 
                 if request.method == "POST":
-                    name = str(request.data.get('name', ''))
+                    content=request.json
+                    name=content["name"]
+                    # name = str(request.data.get('name', ''))
                     if name:
                         bucketlist = Bucketlist(name=name, created_by=user_id)
                         bucketlist.save()
@@ -140,7 +142,7 @@ def create_app(config_name):
                     last_name = str(content['last_name'])
                     gender = str(content['gender'])
                     category = str(content['category'])
-                    area = str(content['last_name'])
+                    area = str(content['area'])
                     contact = str(content['contact'])
                     lat = str(content['coord']['lat'])
                     lon = str(content['coord']['lon'])
@@ -200,6 +202,74 @@ def create_app(config_name):
                 }
                 return make_response(jsonify(response)), 401 
 
+
+
+
+    @app.route('/userprofiles/<id>', methods=['GET', 'PUT', 'DELETE'])
+    def userprofile_manipulation(id, **kwargs):
+     # retrieve a buckelist using it's ID
+        print("id is ",id)
+        userprofile = UserProfile.query.filter_by(id=id).first()
+        if not userprofile:
+            # Raise an HTTPException with a 404 not found status code
+            abort(404)
+
+        if request.method == 'DELETE':
+            userprofile.delete()
+            return {
+            "message": "userprofile {} deleted successfully".format(userprofile.id) 
+         }, 200
+
+        elif request.method == 'PUT':
+            content=request.json
+            # name = str(request.data.get('name', ''))
+            first_name = str(content['first_name'])
+            last_name = str(content['last_name'])
+            gender = str(content['gender'])
+            category = str(content['category'])
+            area = str(content['area'])
+            contact = str(content['contact'])
+            lat = str(content['coord']['lat'])
+            lon = str(content['coord']['lon'])
+            
+            userprofile.first_name = first_name
+            userprofile.last_name = last_name
+            userprofile.gender = gender
+            userprofile.category = category
+            userprofile.area = area
+            userprofile.contact = contact
+            userprofile.lat = lat
+            userprofile.lon = lon
+
+            userprofile.save()
+
+            response = jsonify({
+                'id': userprofile.id,
+                'name': userprofile.first_name,
+                'date_created': userprofile.date_created,
+                'date_modified': userprofile.date_modified
+            })
+            response.status_code = 200
+            return response
+        else:
+            # GET
+            response = jsonify({
+                'id': userprofile.id,
+                'first_name': userprofile.first_name,
+                'last_name': userprofile.last_name,
+                'gender': userprofile.gender,
+                'category': userprofile.category,
+                'area': userprofile.area,
+                'contact': userprofile.contact,
+                'lat': userprofile.lat,
+                'lon': userprofile.lon,
+
+                'date_created': userprofile.date_created,
+                'date_modified': userprofile.date_modified,
+                'created_by': userprofile.created_by
+            })
+            response.status_code = 200
+            return response
 #################################################                
 
 
