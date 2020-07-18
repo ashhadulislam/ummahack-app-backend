@@ -13,7 +13,7 @@ db = SQLAlchemy()
 
 
 def create_app(config_name):
-    from app.models import Bucketlist, User
+    from app.models import Bucketlist, User, UserProfile
 
     app = FlaskAPI(__name__, instance_relative_config=True)
     print("config_name = ",config_name)
@@ -94,7 +94,9 @@ def create_app(config_name):
          }, 200
 
         elif request.method == 'PUT':
-            name = str(request.data.get('name', ''))
+            content=request.json
+            # name = str(request.data.get('name', ''))
+            name = str(content['name'])
             bucketlist.name = name
             bucketlist.save()
             response = jsonify({
@@ -116,7 +118,97 @@ def create_app(config_name):
             response.status_code = 200
             return response
 
+###############################################
+    @app.route('/userprofiles/', methods=['POST', 'GET'])
+    def userprofiles():
+        # Get the access token from the header
+        auth_header = request.headers.get('Authorization')
+        print("Auth header is ",auth_header)
+        access_token = auth_header.split(" ")[1]
+
+        if access_token:
+         # Attempt to decode the token and get the User ID
+            user_id = User.decode_token(access_token)
+            print("user id is ",user_id)
+            if not isinstance(user_id, str):
+                # Go ahead and handle the request, the user is authenticated
+
+                if request.method == "POST":
+                    content=request.json
+                    print("Content received = ",content)
+                    first_name = str(content['first_name'])
+                    last_name = str(content['last_name'])
+                    gender = str(content['gender'])
+                    category = str(content['category'])
+                    area = str(content['last_name'])
+                    contact = str(content['contact'])
+                    lat = str(content['coord']['lat'])
+                    lon = str(content['coord']['lon'])
+                    if first_name:
+                        print("First name = ",first_name)
+                        userprofile = UserProfile(first_name=first_name,                             
+                            last_name=last_name, 
+                            gender=gender, 
+                            category=category, 
+                            area=area, 
+                            contact=contact,
+                            lat=lat, 
+                            lon=lon, 
+                            created_by=user_id)
+                        print("saving in db")
+                        userprofile.save()
+                        print("Saved")
+                        response = jsonify({
+                            'id': userprofile.id,
+                            'first_name': userprofile.first_name,
+                            'date_created': userprofile.date_created,
+                            'date_modified': userprofile.date_modified,
+                            'created_by': user_id
+                        })
+
+                        return make_response(response), 201
+
+                else:
+                    # GET all the bucketlists created by this user
+                    userprofiles = UserProfile.query.filter_by(created_by=user_id)
+                    results = []
+
+                    for userprofile in userprofiles:
+                        obj = {
+                            'id': userprofile.id,
+                            'first_name': userprofile.first_name,
+                            'last_name': userprofile.last_name,
+                            'gender': userprofile.gender,
+                            'category': userprofile.category,
+                            'area': userprofile.area,
+                            'contact': userprofile.contact,
+                            'lat': userprofile.lat,
+                            'lon': userprofile.lon,
+
+                            'date_created': userprofile.date_created,
+                            'date_modified': userprofile.date_modified,
+                            'created_by': userprofile.created_by
+                        }
+                        results.append(obj)
+
+                    return make_response(jsonify(results)), 200
+            else:
+                # user is not legit, so the payload is an error message
+                message = user_id
+                response = {
+                    'message': message
+                }
+                return make_response(jsonify(response)), 401 
+
+#################################################                
+
+
+
+
     # import the authentication blueprint and register it on the app
     from .auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
     return app
+
+
+

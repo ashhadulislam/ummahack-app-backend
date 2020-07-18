@@ -115,3 +115,60 @@ class Bucketlist(db.Model):
     def __repr__(self):
         """Return a representation of a bucketlist instance."""
         return "".format(self.name)
+
+class UserProfile(db.Model):
+    """This class defines the bucketlist table."""
+
+    __tablename__ = 'userprofiles'
+
+    # define the columns of the table, starting with its primary key
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    gender = db.Column(db.String(5))
+    category = db.Column(db.String(25))
+    area = db.Column(db.String(255))
+    contact = db.Column(db.String(20))
+    lat = db.Column(db.String(50))
+    lon = db.Column(db.String(50))
+
+
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    date_modified = db.Column(
+        db.DateTime, default=db.func.current_timestamp(),
+        onupdate=db.func.current_timestamp())
+    created_by = db.Column(db.Integer, db.ForeignKey(User.id))
+
+    def __init__(self, first_name,last_name,gender,category,area,contact,lat,lon, created_by):
+        """Initialize the bucketlist with a name and its creator."""
+        self.first_name = first_name
+        self.last_name = last_name
+        self.gender = gender
+        self.category = category        
+        self.area = area
+        self.contact = contact
+        self.lat = lat
+        self.lon = lon
+        self.created_by = created_by
+
+    def save(self):
+        """Save a bucketlist.
+        This applies for both creating a new bucketlist
+        and updating an existing onupdate
+        """
+        db.session.add(self)
+        db.session.commit()
+
+    @staticmethod
+    def get_all(user_id):
+        """This method gets all the bucketlists for a given user."""
+        return UserProfile.query.filter_by(created_by=user_id)
+
+    def delete(self):
+        """Deletes a given bucketlist."""
+        db.session.delete(self)
+        db.session.commit()
+
+    def __repr__(self):
+        """Return a representation of a bucketlist instance."""
+        return "".format(self.name)        

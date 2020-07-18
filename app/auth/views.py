@@ -13,19 +13,31 @@ class RegistrationView(MethodView):
 
     def post(self):
         """Handle POST request for this view. Url ---> /auth/register"""
+        content = request.json
+        print("Details are ",content)
+        email=content['email']
+        
 
         # Query to see if the user already exists
-        user = User.query.filter_by(email=request.data['email']).first()
+        # user = User.query.filter_by(email=request.data['email']).first()
+        user = User.query.filter_by(email=email).first()
+
 
         if not user:
             # There is no user so we'll try to register them
+            
             try:
-                post_data = request.data
+
+                # post_data = request.data
                 # Register the user
-                email = post_data['email']
-                password = post_data['password']
+                # email = post_data['email']
+                email=content['email']
+                print("Email is ",email)
+                password = content['password']
+                print("password is ",password)
                 user = User(email=email, password=password)
                 user.save()
+                print("Saved")
 
                 response = {
                     'message': 'You registered successfully. Please log in.'
@@ -55,11 +67,15 @@ class LoginView(MethodView):
         """Handle POST request for this view. Url ---> /auth/login"""
         try:
             # Get the user object using their email (unique to every user)
-            user = User.query.filter_by(email=request.data['email']).first()
+            content = request.json
+            email=content["email"]
+            # user = User.query.filter_by(email=request.data['email']).first()
+            user = User.query.filter_by(email=email).first()
 
             # Try to authenticate the found user using their password
             print("user id is ",user.id)
-            if user and user.password_is_valid(request.data['password']):
+            # if user and user.password_is_valid(request.data['password']):
+            if user and user.password_is_valid(content['password']):                
                 print("password is valid")
                 # Generate the access token. This will be used as the authorization header
                 access_token = user.generate_token(user.id)
